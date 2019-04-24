@@ -88,7 +88,6 @@ module util_adcfifo #(
   reg                                   adc_waddr_rel_t = 'd0;
   reg         [ADC_ADDRESS_WIDTH-1:0]   adc_waddr_rel = 'd0;
   reg                                   adc_capture_arm = 1'b0;
-  reg                                   dma_rst = 'd0;
   reg         [ 2:0]                    dma_waddr_rel_t_m = 'd0;
   reg         [ADC_ADDRESS_WIDTH-1:0]   dma_waddr_rel = 'd0;
   reg                                   dma_rd = 'd0;
@@ -244,10 +243,8 @@ module util_adcfifo #(
 
   always @(posedge dma_clk) begin
     if (dma_xfer_req == 1'b0) begin
-      dma_rst <= 1'b1;
       dma_waddr_rel <= 'd0;
     end else begin
-      dma_rst <= 1'b0;
       if (dma_waddr_rel_t_s == 1'b1) begin
         dma_waddr_rel <= adc_waddr_rel;
       end
@@ -326,7 +323,7 @@ module util_adcfifo #(
 
  ad_axis_inf_rx #(.DATA_WIDTH(DMA_DATA_WIDTH)) i_axis_inf (
     .clk (dma_clk),
-    .rst (dma_rst),
+    .rst (dma_read_rst_s),
     .valid (dma_rd_d),
     .last (1'd0),
     .data (dma_rdata_d),
