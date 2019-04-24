@@ -43,6 +43,7 @@ module util_adcfifo #(
   parameter   DMA_READY_ENABLE = 1,
   parameter   DMA_ADDRESS_WIDTH =  10,
   parameter   SYNCED_CAPTURE_ENABLE = 0,
+  parameter   ASYNC_CAPTURE_IN = 1,
   parameter   CAPTURE_TILL_FULL = 0) (
 
   // fifo interface
@@ -124,14 +125,18 @@ module util_adcfifo #(
   generate
   if (SYNCED_CAPTURE_ENABLE) begin : adc_synced_capture
 
-    sync_bits #(
-      .NUM_OF_BITS (1),
-      .ASYNC_CLK (1))
-    i_adc_capture_start_sync (
-      .in (adc_capture_start_in),
-      .out_clk (adc_clk),
-      .out_resetn (1'b1),
-      .out (adc_capture_start_s));
+    if (ASYNC_CAPTURE_IN) begin
+      sync_bits #(
+        .NUM_OF_BITS (1),
+        .ASYNC_CLK (1))
+      i_adc_capture_start_sync (
+        .in (adc_capture_start_in),
+        .out_clk (adc_clk),
+        .out_resetn (1'b1),
+        .out (adc_capture_start_s));
+    end else begin
+      assign adc_capture_start_s = adc_capture_start_in;
+    end
 
     always @(posedge adc_clk) begin
       if (adc_rst_s == 1'b1) begin
