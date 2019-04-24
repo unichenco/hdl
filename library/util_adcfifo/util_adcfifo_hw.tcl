@@ -11,6 +11,8 @@ set_module_property ELABORATION_CALLBACK p_util_adcfifo
 ad_ip_files util_adcfifo [list\
   $ad_hdl_dir/library/common/ad_rst.v \
   $ad_hdl_dir/library/common/ad_axis_inf_rx.v \
+  $ad_hdl_dir/library/common/ad_b2g.v \
+  $ad_hdl_dir/library/common/ad_g2b.v \
   $ad_hdl_dir/library/util_cdc/sync_bits.v \
   $ad_hdl_dir/library/util_cdc/sync_event.v \
   util_adcfifo.v \
