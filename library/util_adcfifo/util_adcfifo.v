@@ -257,10 +257,16 @@ module util_adcfifo #(
   generate
   if (SYNCED_CAPTURE_ENABLE) begin : dma_synced_capture
 
-    always @(posedge dma_clk) begin
-      dma_capture_start_in <= {dma_capture_start_in[1:0], adc_capture_start_in};
-    end
-    assign dma_read_rst_s = dma_capture_start_in[2];
+    sync_event #(
+      .NUM_OF_EVENTS(1),
+      .EDGE_DETECT (1),
+      .POSEDGE_DETECT (1)
+    ) i_dma_capture_start_in_sync (
+      .in_clk (adc_clk),
+      .in_event (adc_capture_start_in),
+      .out_clk (dma_clk),
+      .out_event (dma_read_rst_s)
+    );
 
   end else begin : dma_asynced_capture
 

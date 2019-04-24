@@ -12,6 +12,7 @@ ad_ip_files util_adcfifo [list\
   $ad_hdl_dir/library/common/ad_rst.v \
   $ad_hdl_dir/library/common/ad_axis_inf_rx.v \
   $ad_hdl_dir/library/util_cdc/sync_bits.v \
+  $ad_hdl_dir/library/util_cdc/sync_event.v \
   util_adcfifo.v \
   util_adcfifo_constr.sdc]
 
