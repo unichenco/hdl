@@ -37,7 +37,9 @@
 
 module sync_event #(
   parameter NUM_OF_EVENTS = 1,
-  parameter ASYNC_CLK = 1
+  parameter ASYNC_CLK = 1,
+  parameter EDGE_DETECT = 0,
+  parameter POSEDGE_DETECT = 0
 ) (
   input in_clk,
   input [NUM_OF_EVENTS-1:0] in_event,
@@ -46,7 +48,7 @@ module sync_event #(
 );
 
 generate
-if (ASYNC_CLK == 1) begin : asynchronouse_event
+if (ASYNC_CLK == 1) begin
 
   wire out_toggle;
   wire in_toggle;
@@ -69,7 +71,17 @@ if (ASYNC_CLK == 1) begin : asynchronouse_event
   );
 
   wire in_ready = in_toggle == in_toggle_d1;
-  wire load_out = out_toggle ^ out_toggle_d1;
+
+  wire load_out;
+  if (EDGE_DETECT) begin : event_edge_detect
+    if (POSEDGE_DETECT) begin : event_posedge
+      assign load_out = out_toggle & ~out_toggle_d1;
+    end else begin : event_negedge
+      assign load_out = ~out_toggle & out_toggle_d1;
+    end
+  end else begin : event_default
+    assign load_out = out_toggle ^ out_toggle_d1;
+  end
 
   reg [NUM_OF_EVENTS-1:0] in_event_sticky = 'h00;
   wire [NUM_OF_EVENTS-1:0] pending_events = in_event_sticky | in_event;
@@ -110,7 +122,7 @@ if (ASYNC_CLK == 1) begin : asynchronouse_event
     out_toggle_d1 <= out_toggle;
   end
 
-end else begin : synchronouse_event
+end else begin
 
   always @(*) begin
     out_event <= in_event;
