@@ -95,3 +95,12 @@ set_property  -dict {PACKAGE_PIN  AC19  IOSTANDARD LVCMOS25} [get_ports pmod_gpi
 
 # Maximum lane of 10.3125 (Maximum supported by the ZC706)
 create_clock -name tx_ref_clk   -period  3.879 [get_ports tx_ref_clk_p]
+create_clock -name tx_div_clk   -period  3.879 [get_pins i_system_wrapper/system_i/util_dac_jesd204_xcvr/inst/i_xch_0/i_gtxe2_channel/TXOUTCLK]
+
+# exceptions
+# We can't place the sysref in IOB, instead limit the input delay of the signal
+# to the first sampling FF
+set_max_delay -from [get_ports tx_sysref_*] \
+              -to [get_pins i_system_wrapper/system_i/dac_jesd204_link/tx/inst/i_lmfc/sysref_r_reg/D] 2.0 \
+              -datapath_only
+
