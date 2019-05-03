@@ -75,7 +75,7 @@ module util_adcfifo #(
                                       (DMA_MEM_RATIO == 4) ? 2 : 3;
   localparam  ADC_ADDRESS_WIDTH = DMA_ADDRESS_WIDTH - ADDRESS_PADDING_WIDTH;
   localparam  ADC_ADDR_LIMIT = (2**ADC_ADDRESS_WIDTH)-1;
-  localparam  DMA_ADDR_LIMIT = (2**DMA_ADDRESS_WIDTH)-1;
+  localparam  DMA_ADDR_LIMIT = (2**DMA_ADDRESS_WIDTH);
 
   // internal registers
 
@@ -89,14 +89,14 @@ module util_adcfifo #(
   reg                                   dma_rd = 'd0;
   reg                                   dma_rd_d = 'd0;
   reg         [DMA_DATA_WIDTH-1:0]      dma_rdata_d = 'd0;
-  reg         [DMA_ADDRESS_WIDTH-1:0]   dma_raddr = 'd0;
+  reg         [DMA_ADDRESS_WIDTH:0]     dma_raddr = 'd0;
   reg         [DMA_ADDRESS_WIDTH-1:0]   dma_waddr_int = 'd0;
+  reg                                   dma_endof_read = 'd0;
 
   // internal signals
 
   wire                                  adc_rst_s;
   wire                                  dma_wready_s;
-  wire                                  dma_rd_s;
   wire        [DMA_DATA_WIDTH-1:0]      dma_rdata_s;
   wire                                  dma_read_rst_s;
   wire        [ADC_ADDRESS_WIDTH-1:0]   dma_waddr_int_s;
@@ -232,7 +232,11 @@ module util_adcfifo #(
     .out_count (dma_waddr_int_s));
 
   always @(posedge dma_clk) begin
-    dma_waddr_int <= {dma_waddr_int_s,{ADDRESS_PADDING_WIDTH{1'b0}}};
+    if (dma_read_rst_s == 1'b1) begin
+      dma_waddr_int <= 'd0;
+    end else begin
+      dma_waddr_int <= {dma_waddr_int_s,{ADDRESS_PADDING_WIDTH{1'b0}}};
+    end
   end
 
   generate
@@ -257,7 +261,7 @@ module util_adcfifo #(
   endgenerate
 
   assign dma_wready_s = (DMA_READY_ENABLE == 0) ? 1'b1 : dma_wready;
-  assign dma_rd_s = (dma_raddr < dma_waddr_int) ? dma_wready_s : 1'b0;
+  assign dma_rd_s = (dma_raddr <= {1'b0, dma_waddr_int}) ? dma_wready_s : 1'b0;
 
   always @(posedge dma_clk) begin
     if (dma_read_rst_s == 1'b1) begin
@@ -265,13 +269,16 @@ module util_adcfifo #(
       dma_rd_d <= 'd0;
       dma_rdata_d <= 'd0;
       dma_raddr <= 'd0;
+      dma_endof_read <= 'd0;
     end else begin
-      dma_rd <= dma_rd_s;
+      if (dma_waddr_int != 'd0) begin
+        dma_rd <= dma_rd_s;
+        if (dma_rd_s == 1'b1) begin
+          dma_raddr <= dma_raddr + 1'b1;
+        end
+      end
       dma_rd_d <= dma_rd;
       dma_rdata_d <= dma_rdata_s;
-      if (dma_rd_s == 1'b1) begin
-        dma_raddr <= dma_raddr + 1'b1;
-      end
     end
   end
 
@@ -285,7 +292,7 @@ module util_adcfifo #(
     .mem_i_wraddress (adc_waddr_int),
     .mem_i_datain (adc_wdata_int),
     .mem_i_rdclock (dma_clk),
-    .mem_i_rdaddress (dma_raddr),
+    .mem_i_rdaddress (dma_raddr[DMA_ADDRESS_WIDTH-1:0]),
     .mem_o_dataout (dma_rdata_s));
   end else begin
   ad_mem_asym #(
@@ -300,7 +307,7 @@ module util_adcfifo #(
     .dina (adc_wdata_int),
     .clkb (dma_clk),
     .reb (1'b1),
-    .addrb (dma_raddr),
+    .addrb (dma_raddr[DMA_ADDRESS_WIDTH-1:0]),
     .doutb (dma_rdata_s));
   end
   endgenerate
